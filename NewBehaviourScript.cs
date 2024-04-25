@@ -11,7 +11,7 @@ public class NewBehaviourScript : MonoBehaviour
 private float speed = 2.0f;
 Vector3 moveDirection;
 
-private float jumpForce = 500f;
+private float jumpForce = 750f;
 private double currSpeed;
 
 private float mouseX = Vector3.forward.x;
@@ -29,9 +29,11 @@ private float maxSpeed = 200f;
         GetComponent<Rigidbody>().freezeRotation = true;
         isThirdPerson = false;
 
-        //Physics.gravity = new Vector3(0, -25, 0); // Object gravity
+        //Physics.gravity = new Vector3(0, -15, 0); // Object gravity
+
         StartCoroutine(calculateSpeed());
         StartCoroutine(calculateDirection());
+        StartCoroutine(jump());
 
         // Setup cursor
         UnityEngine.Cursor.lockState = CursorLockMode.Locked;
@@ -49,7 +51,7 @@ private float maxSpeed = 200f;
         UnityEngine.Quaternion aQuat = GetComponent<Rigidbody>().rotation;
         GetComponent<Rigidbody>().rotation = UnityEngine.Quaternion.Euler(aQuat.x + (mouseY * -10), aQuat.y + (mouseX * 10), aQuat.z);
 
-        jumpSprintFunc();
+        sprintFunc();
     }
     void LateUpdate(){
          cameraFunc();
@@ -59,11 +61,8 @@ private float maxSpeed = 200f;
         groundCheck();
     }
 
-    private void jumpSprintFunc(){
-        // Add force upwards on pressing space
-        if(Input.GetKeyDown(KeyCode.Space) && isOnGround){
-            GetComponent<Rigidbody>().AddForce(0, jumpForce, 0);
-        }
+    private void sprintFunc(){
+        
         if(Input.GetKeyDown(KeyCode.LeftShift)){ // Sprinting on shift
             speed = 6.0f;
         }
@@ -97,24 +96,28 @@ private float maxSpeed = 200f;
     }
     private void wasdFunc(){
         
-        if(Input.GetKey(KeyCode.W)){
+        if(Input.GetKey(KeyCode.W)){ // Move forward on keypress
             moveDirection = new Vector3(playerTrans.forward.x, 0, playerTrans.right.x);
             GetComponent<Rigidbody>().AddForce(moveDirection.normalized * speed * 10, ForceMode.Force);
+        
         }
-        if(Input.GetKey(KeyCode.A)){
+        if(Input.GetKey(KeyCode.A)){ // Move left on keypress
             moveDirection = new Vector3(playerTrans.right.x * -1, 0, playerTrans.right.z * -1);
             GetComponent<Rigidbody>().AddForce(moveDirection.normalized * speed * 10, ForceMode.Force);
+        
         }
-        if(Input.GetKey(KeyCode.S)){
+        if(Input.GetKey(KeyCode.S)){ // Move backwards on keypress
             moveDirection = new Vector3(playerTrans.forward.x * -1, 0, playerTrans.right.x * -1);
             GetComponent<Rigidbody>().AddForce(moveDirection.normalized * speed * 10, ForceMode.Force);
+        
         }
-        if(Input.GetKey(KeyCode.D)){
+        if(Input.GetKey(KeyCode.D)){ //Move right on keypress
             moveDirection = new Vector3(playerTrans.right.x, 0, playerTrans.right.z);
             GetComponent<Rigidbody>().AddForce(moveDirection.normalized * speed * 10, ForceMode.Force);
+        
         }
         
-        if(currSpeed > maxSpeed){
+        if(currSpeed > maxSpeed){ // Keep the player from going too fast
             GetComponent<Rigidbody>().AddForce(currDirection.normalized * speed * -10, ForceMode.Force);
         }
 
@@ -128,7 +131,7 @@ private float maxSpeed = 200f;
         }
     }
     
-    IEnumerator calculateSpeed(){
+    IEnumerator calculateSpeed(){ // Function for calculating speed
         while(true){
             Vector3 lastVec3 = transform.position;
 
@@ -137,7 +140,7 @@ private float maxSpeed = 200f;
             currSpeed = Vector3.Distance(lastVec3, transform.position) / Time.deltaTime;
         }
     }
-    IEnumerator calculateDirection(){
+    IEnumerator calculateDirection(){ // Function for calculating direction of player
         while(true){
             Vector3 lastVec3 = transform.position;
 
@@ -145,6 +148,29 @@ private float maxSpeed = 200f;
 
             Vector3 currVec3 = transform.position;
             currDirection = new Vector3(currVec3.x - lastVec3.x, currVec3.y - lastVec3.y, currVec3.z - lastVec3.z);
+        }
+    }
+    IEnumerator jump(){ // Function for allowing the player to hold jump
+        while(true){
+            if(Input.GetKey(KeyCode.Space) && (isOnGround  || wallCheck())){
+                GetComponent<Rigidbody>().AddForce(0, jumpForce, 0);
+                
+            }
+            yield return new WaitForSeconds(0.1f);
+        }
+        
+    }
+    public bool wallCheck(){
+        if(UnityEngine.Physics.Raycast(GetComponent<Rigidbody>().position, transform.forward, 1.1f, Physics.AllLayers)){
+            return true;
+        }else if(UnityEngine.Physics.Raycast(GetComponent<Rigidbody>().position, transform.forward * -1, 1.1f, Physics.AllLayers)){
+            return true;
+        }else if(UnityEngine.Physics.Raycast(GetComponent<Rigidbody>().position, transform.right, 1.1f, Physics.AllLayers)){
+            return true;
+        }else if(UnityEngine.Physics.Raycast(GetComponent<Rigidbody>().position, transform.right * -1, 1.1f, Physics.AllLayers)){
+            return true;
+        }else{
+            return false;
         }
     }
 }
